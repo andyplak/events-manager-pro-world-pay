@@ -12,6 +12,20 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 
 	public function __construct() {
 		parent::__construct();
+
+		if($this->is_active()) {
+
+			//set up cron for booking timeouts
+			$timestamp = wp_next_scheduled('emp_worldpay_cron');
+			if( absint(get_option('em_worldpay_booking_timeout')) > 0 && !$timestamp ){
+				$result = wp_schedule_event(time(),'em_minute','emp_worldpay_cron');
+			}elseif( !$timestamp ){
+				wp_unschedule_event($timestamp, 'emp_worldpay_cron');
+			}
+		}else{
+			// Unschedule the cron as gateway is not active
+			wp_clear_scheduled_hook('emp_paypal_cron');
+		}
 	}
 
 	/************ Admin functions *************/
@@ -81,6 +95,13 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			  	</td>
 		  	</tr>
 			<tr valign="top">
+				<th scope="row"><?php _e('Delete Bookings Pending Payment', 'em-pro') ?></th>
+				<td>
+					<input type="text" name="worldpay_booking_timeout" style="width:50px;" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_booking_timeout" )); ?>" style='width: 40em;' /> <?php _e('minutes','em-pro'); ?><br />
+					<em><?php _e('Once a booking is started and the user is taken to WorldPay, Events Manager stores a booking record in the database to identify the incoming payment. These spaces may be considered reserved if you enable <em>Reserved unconfirmed spaces?</em> in your Events &gt; Settings page. If you would like these bookings to expire after x minutes, please enter a value above (note that bookings will be deleted, and any late payments will need to be refunded manually via WorldPay).','em-pro'); ?></em>
+				</td>
+			</tr>
+			<tr valign="top">
 				<th scope="row"><?php _e('Manually approve completed transactions?', 'em-pro') ?></th>
 				<td>
 					<input type="checkbox" name="worldpay_manual_approval" value="1" <?php echo (get_option('em_'. $this->gateway . "_manual_approval" )) ? 'checked="checked"':''; ?> /><br />
@@ -102,6 +123,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			$this->gateway . "_booking_feedback" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback' ]),
 			$this->gateway . "_booking_feedback_free" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_free' ]),
 			$this->gateway . "_booking_feedback_thanks" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_thanks' ]),
+			$this->gateway . "_booking_timeout" => $_REQUEST[ $this->gateway.'_booking_timeout' ],
 			$this->gateway . "_return_success" => $_REQUEST[ $this->gateway.'_return_success' ],
 			$this->gateway . "_return_fail" => $_REQUEST[ $this->gateway.'_return_fail' ],
 		);
@@ -113,3 +135,27 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 }
 
 EM_Gateways::register_gateway('worldpay', 'EM_Gateway_Worldpay');
+
+/**
+ * Deletes bookings pending payment that are more than x minutes old, defined by WorldPay options.
+ * This is lifted straight from PayPal Gateway in EM Pro. This doesn't take into account Gateway,
+ * so PayPal bookings could be deleted by the WorldPay cron and vice versa.
+ */
+function em_gateway_worldpay_booking_timeout(){
+	global $wpdb;
+	//Get a time from when to delete
+	$minutes_to_subtract = absint(get_option('em_worldpay_booking_timeout'));
+	if( $minutes_to_subtract > 0 ){
+		//get booking IDs without pending transactions
+		$booking_ids = $wpdb->get_col('SELECT b.booking_id FROM '.EM_BOOKINGS_TABLE.' b LEFT JOIN '.EM_TRANSACTIONS_TABLE." t ON t.booking_id=b.booking_id  WHERE booking_date < TIMESTAMPADD(MINUTE, -{$minutes_to_subtract}, NOW()) AND booking_status=4 AND transaction_id IS NULL" );
+		if( count($booking_ids) > 0 ){
+			//first delete ticket_bookings with expired bookings
+			$sql = "DELETE FROM ".EM_TICKETS_BOOKINGS_TABLE." WHERE booking_id IN (".implode(',',$booking_ids).");";
+			$wpdb->query($sql);
+			//then delete the bookings themselves
+			$sql = "DELETE FROM ".EM_BOOKINGS_TABLE." WHERE booking_id IN (".implode(',',$booking_ids).");";
+			$wpdb->query($sql);
+		}
+	}
+}
+add_action('emp_worldpay_cron', 'em_gateway_paypal_booking_timeout');
