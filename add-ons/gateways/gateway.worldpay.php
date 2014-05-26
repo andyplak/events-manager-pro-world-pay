@@ -93,7 +93,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 
 		$worldpay_vars = array(
 			'instId' => get_option('em_'. $this->gateway . "_instId" ),
-			'cartId' => 'EM-'.$EM_Booking->booking_id,
+			'cartId' => $EM_Booking->booking_id,
 			'currency' => get_option('dbem_bookings_currency', 'USD'),
 			'amount' => number_format( $EM_Booking->get_price(), 2),
 			'desc' => __('Event Tickets for ', 'em-pro') . $EM_Booking->get_event()->event_name
@@ -112,6 +112,97 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 	 */
 	function get_worldpay_url(){
 		return 'https://secure-test.worldpay.com/wcc/purchase';
+	}
+
+
+	/**
+	 * Runs when WorldPay Payment Response is enabled and sends payment details accross. Bookings are updated and transactions are recorded accordingly.
+	 */
+	function handle_payment_return() {
+
+// For testing only
+//$_POST = $_GET;
+//error_log( print_r( $_POST, true  ) );
+//var_dump( $_POST );
+
+		if( isset( $_POST['cartId'] ) && isset( $_POST['transTime'] ) && isset( $_POST['transStatus'] ) ) {
+
+			// Lookup booking
+			$EM_Booking = em_get_booking( $_POST['cartId'] );
+
+			$amount = $_POST['amount'];
+			$currency = $_POST['currency'];
+			$timestamp = date('Y-m-d H:i:s', $_POST['transTime'] / 1000 ); // WorldPay timestamp is miliseconds since epoch
+
+			if( !empty($EM_Booking->booking_id) ){
+
+				if( $_POST['transStatus'] == 'Y' ) {
+					// Payment successful
+					$this->record_transaction($EM_Booking, $amount, $currency, $timestamp, $_POST['transId'], $_POST['transStatus'], '');
+
+					if( $amount >= $EM_Booking->get_price() && (!get_option('em_'.$this->gateway.'_manual_approval', false) ) ){
+						$EM_Booking->approve(true, true); //approve and ignore spaces
+					}else{
+						//TODO do something if worldpay payment not enough
+						$EM_Booking->set_status(0); //Set back to normal "pending"
+					}
+					do_action('em_payment_processed', $EM_Booking, $this);
+
+					// Return message to sage pay with success message        
+
+				}else {
+					if( $_POST['transStatus'] == 'Y' ) {
+						// Payment Cancelled
+
+						$note = 'Transaction has been cancelled: '.$_POST['rawAuthMessage'];
+						$this->record_transaction($EM_Booking, $amount, $currency, $timestamp, $_POST['tranId'], $_POST['tranStatus'], $note);
+
+						$EM_Booking->cancel();
+						do_action('em_payment_cancelled', $EM_Booking, $this);
+
+						// Return Message to Sage pay with success message        
+
+					}else{
+						echo 'Error: Unrecognised Status received';
+					}
+				}
+			}else{
+
+				// Handle case of no booking found
+				if( is_numeric( $_POST['cartId'] ) && $_POST['transStatus'] == 'Y' ){
+					$message = apply_filters('em_gateway_worldpay_bad_booking_email',"
+A Payment has been received by WorldPay for a non-existent booking.
+
+It may be that this user's booking has timed out yet they proceeded with payment at a later stage.
+
+In some cases, it could be that other payments not related to Events Manager are triggering this error.
+
+To refund this transaction, you must go to your WorldPay account and search for this transaction:
+
+Transaction ID : %transaction_id%
+Email : %payer_email%
+
+When viewing the transaction details, you should see an option to issue a refund.
+
+If there is still space available, the user must book again.
+
+Sincerely,
+Events Manager
+					", $booking_id, $event_id);
+					$EM_Event = new EM_Event($event_id);
+					$message  = str_replace(array('%transaction_id%','%payer_email%'), array($_POST['transId'], $_POST['email'] ), $message);
+					wp_mail(get_option('em_'. $this->gateway . "_email" ), __('Unprocessed payment needs refund'), $message);
+				}else{
+					//header('Status: 404 Not Found');
+					echo 'Error: Bad WorldPay request. No booking found.';
+					exit;
+				}
+			}
+		} else {
+			// Did not find expected POST variables. Possible access attempt from a non WorldPay site.
+			echo 'Error: Missing POST variables. Identification is not possible. If you are not WorldPay and are visiting this page directly in your browser, this error does not indicate a problem, but simply means EM is correctly set up and ready to receive notifications from WorldPay only.';
+			exit;
+		}
 	}
 
 	/*
@@ -150,6 +241,12 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 	</table>
 
 	<h3><?php echo sprintf(__('%s Options','em-pro'),'WorldPay'); ?></h3>
+
+	<p>
+		<strong><?php _e('Important:','em-pro'); ?></strong>
+		<?php _e('In order to connect WorldPay with your site, you need to enable Payment Response on your WorldPay account.', 'em-pro'); ?><br />
+		<?php echo " ". sprintf(__('Your return url is %s', 'em-pro'),'<code>'.$this->get_payment_return_url().'</code>'); ?>
+	</p>
 
 	<table class="form-table">
 		<tbody>
