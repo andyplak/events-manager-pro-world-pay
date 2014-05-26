@@ -114,7 +114,11 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 		return 'https://secure-test.worldpay.com/wcc/purchase';
 	}
 
-	/************ Admin functions *************/
+	/*
+	 * --------------------------------------------------
+	 * Gateway Settings Functions
+	 * --------------------------------------------------
+	 */
 
 	function mysettings() {
 		global $EM_options;
