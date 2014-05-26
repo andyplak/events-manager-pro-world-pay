@@ -15,6 +15,8 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 
 		if($this->is_active()) {
 
+			add_action('em_gateway_js', array(&$this,'em_gateway_js'));
+
 			//set up cron for booking timeouts
 			$timestamp = wp_next_scheduled('emp_worldpay_cron');
 			if( absint(get_option('em_worldpay_booking_timeout')) > 0 && !$timestamp ){
@@ -24,8 +26,92 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			}
 		}else{
 			// Unschedule the cron as gateway is not active
-			wp_clear_scheduled_hook('emp_paypal_cron');
+			wp_clear_scheduled_hook('emp_worldpay_cron');
 		}
+	}
+
+
+	/*
+	 * --------------------------------------------------
+	 * Booking UI - modifications to booking pages and tables containing WorldPay bookings
+	 * --------------------------------------------------
+	 */
+
+
+	/**
+	 * Outputs some JavaScript during the em_gateway_js action, which is run inside a script html tag, located in gateways/gateway.worldpay.js
+	 */
+	function em_gateway_js(){
+		include(dirname(__FILE__).'/gateway.worldpay.js');
+	}
+
+
+
+	/*
+	 * --------------------------------------------------
+	 * Booking Interception - functions that modify booking object behaviour
+	 * --------------------------------------------------
+	 */
+
+	/**
+	 * Intercepts return data after a booking has been made and adds WorldPay vars, modifies feedback message.
+	 * @param array $return
+	 * @param EM_Booking $EM_Booking
+	 * @return array
+	 */
+	function booking_form_feedback( $return, $EM_Booking = false ){
+
+		//Double check $EM_Booking is an EM_Booking object and that we have a booking awaiting payment.
+		if( is_object($EM_Booking) && $this->uses_gateway($EM_Booking) ){
+			if( !empty($return['result']) && $EM_Booking->get_price() > 0 && $EM_Booking->booking_status == $this->status ){
+				$return['message'] = get_option('em_worldpay_booking_feedback');
+				$worldpay_url = $this->get_worldpay_url();
+				$worldpay_vars = $this->get_worldpay_vars($EM_Booking);
+				$worldpay_return = array('worldpay_url'=>$worldpay_url, 'worldpay_vars'=>$worldpay_vars);
+				$return = array_merge($return, $worldpay_return);
+			}else{
+				//returning a free message
+				$return['message'] = get_option('em_worldpay_booking_feedback_free');
+			}
+		}
+		return $return;
+	}
+
+
+	/*
+	 * ------------------------------------------------------------
+	 * WorldPay Functions - functions specific to WorldPay payments
+	 * ------------------------------------------------------------
+	 */
+
+	/**
+	 * Retreive the WorldPay vars needed to send to the gatway to proceed with payment
+	 * @param EM_Booking $EM_Booking
+	 */
+	function get_worldpay_vars( $EM_Booking ) {
+		global $wp_rewrite, $EM_Notices;
+
+		$worldpay_vars = array(
+			'instId' => get_option('em_'. $this->gateway . "_instId" ),
+			'cartId' => 'EM-'.$EM_Booking->booking_id,
+			'currency' => get_option('dbem_bookings_currency', 'USD'),
+			'amount' => number_format( $EM_Booking->get_price(), 2),
+			'desc' => __('Event Tickets for ', 'em-pro') . $EM_Booking->get_event()->event_name
+		);
+
+		if( get_option('em_'. $this->gateway . "_mode" ) == 'test' ) {
+			$worldpay_vars['testMode'] = 100;
+		}
+
+		return apply_filters('em_gateway_worldpay_get_worldpay_vars', $worldpay_vars, $EM_Booking, $this);
+	}
+
+	/**
+	 * gets worldpay gateway url
+	 * @returns string
+	 */
+	function get_worldpay_url(){
+		return 'https://secure-test.worldpay.com/wcc/purchase';
 	}
 
 	/************ Admin functions *************/
@@ -158,4 +244,4 @@ function em_gateway_worldpay_booking_timeout(){
 		}
 	}
 }
-add_action('emp_worldpay_cron', 'em_gateway_paypal_booking_timeout');
+add_action('emp_worldpay_cron', 'em_gateway_worldpay_booking_timeout');
