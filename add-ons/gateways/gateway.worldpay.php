@@ -111,7 +111,10 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 	 * @returns string
 	 */
 	function get_worldpay_url(){
-		return 'https://secure-test.worldpay.com/wcc/purchase';
+		if( get_option('em_'. $this->gateway . "_mode" ) == 'test' ) {
+			return 'https://secure-test.worldpay.com/wcc/purchase';
+		}
+		return 'https://secure.worldpay.com/wcc/purchase';
 	}
 
 
