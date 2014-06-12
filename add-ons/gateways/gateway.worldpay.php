@@ -148,7 +148,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 					}
 					do_action('em_payment_processed', $EM_Booking, $this);
 
-					// Return message to sage pay with success message        
+					echo "Return message to world pay with success message?";        
 
 				}else {
 					if( $_POST['transStatus'] == 'Y' ) {
@@ -160,7 +160,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 						$EM_Booking->cancel();
 						do_action('em_payment_cancelled', $EM_Booking, $this);
 
-						// Return Message to Sage pay with success message        
+						echo "Return message to world pay with success message?";        
 
 					}else{
 						echo 'Error: Unrecognised Status received';
@@ -245,7 +245,7 @@ Events Manager
 	<p>
 		<strong><?php _e('Important:','em-pro'); ?></strong>
 		<?php _e('In order to connect WorldPay with your site, you need to enable Payment Response on your WorldPay account.', 'em-pro'); ?><br />
-		<?php echo " ". sprintf(__('Your return url is %s', 'em-pro'),'<code>'.$this->get_payment_return_url().'</code>'); ?>
+		<?php echo " ". sprintf(__('Your Payment Response Url is %s', 'em-pro'),'<code>'.$this->get_payment_return_url().'</code>'); ?>
 	</p>
 
 	<table class="form-table">
