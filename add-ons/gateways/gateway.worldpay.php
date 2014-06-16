@@ -16,6 +16,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 		if($this->is_active()) {
 
 			add_action('em_gateway_js', array(&$this,'em_gateway_js'));
+			add_action('em_template_my_bookings_header',array(&$this,'say_thanks')); //say thanks on my_bookings page
 
 			//set up cron for booking timeouts
 			$timestamp = wp_next_scheduled('emp_worldpay_cron');
@@ -117,6 +118,15 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 		return 'https://secure.worldpay.com/wcc/purchase';
 	}
 
+	/**
+	 * Return thanks message on My Bookings page if GET var set
+	 */
+	function say_thanks(){
+		if( $_REQUEST['thanks'] == 1 ){
+			echo "<div class='em-booking-message em-booking-message-success'>".get_option('em_'.$this->gateway.'_booking_feedback_thanks').'</div>';
+		}
+	}
+
 
 	/**
 	 * Runs when WorldPay Payment Response is enabled and sends payment details accross. Bookings are updated and transactions are recorded accordingly.
@@ -151,19 +161,31 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 					}
 					do_action('em_payment_processed', $EM_Booking, $this);
 
-					echo "Return message to world pay with success message?";        
+					// Display thanks message and link back to custom page or my bookings
+					$continue_link = get_option('em_'. $this->gateway . '_return_success');
+					if( empty( $continue_link ) ) {
+						$continue_link = get_permalink(get_option("dbem_my_bookings_page")).'?thanks=1';
+					}
+					echo '<p>'.get_option('em_'.$this->gateway.'_booking_feedback_thanks').'</p>';
+					echo 'Return to <a href="'.$continue_link.'">'.get_bloginfo('name').'</a>';
+					return;
 
 				}else {
-					if( $_POST['transStatus'] == 'Y' ) {
+					if( $_POST['transStatus'] == 'C' ) {
 						// Payment Cancelled
 
-						$note = 'Transaction has been cancelled: '.$_POST['rawAuthMessage'];
+						$note = 'Transaction cancelled: '.$_POST['rawAuthMessage'];
 						$this->record_transaction($EM_Booking, $amount, $currency, $timestamp, $_POST['tranId'], $_POST['tranStatus'], $note);
 
 						$EM_Booking->cancel();
 						do_action('em_payment_cancelled', $EM_Booking, $this);
 
-						echo "Return message to world pay with success message?";        
+						if( empty( $continue_link ) ) {
+							$continue_link = get_permalink(get_option("dbem_my_bookings_page")).'?fail='.$strStatus;
+						}
+						echo '<p>Payment cancelled.</p>';
+						echo 'Return to <a href="'.$continue_link.'">'.get_bloginfo('name').'</a>';
+						return;
 
 					}else{
 						echo 'Error: Unrecognised Status received';
