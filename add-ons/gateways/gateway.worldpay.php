@@ -104,6 +104,16 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			$worldpay_vars['testMode'] = 100;
 		}
 
+		// Build MD5 signature if configured for use in Gateway settings
+		if( get_option('em_'. $this->gateway . "_md5_key" ) != '' ) {
+			$signature = get_option('em_'. $this->gateway . "_md5_key" );
+			$signature.= ":".get_option('em_'. $this->gateway . "_instId" );
+			$signature.= ":".number_format( $EM_Booking->get_price(), 2);
+			$signature.= ":".get_option('dbem_bookings_currency', 'USD');
+			$signature.= ":".$EM_Booking->booking_id;
+			$worldpay_vars['signature'] = md5( $signature );
+		}
+
 		return apply_filters('em_gateway_worldpay_get_worldpay_vars', $worldpay_vars, $EM_Booking, $this);
 	}
 
@@ -277,12 +287,12 @@ Events Manager
 		<tbody>
 			<tr valign="top">
 				<th scope="row"><?php _e('WorldPay Installation ID', 'em-pro') ?></th>
-					<td><input type="text" name="worldpay_instId" value="<?php esc_attr_e( get_option('em_'. $this->gateway . "_instId" )); ?>" />
-						<br />
-						<em><?php _e('Set this value to the Installation ID assigned to you by WorldPay', 'em-pro'); ?></em>
-					</td>
-				</tr>
-				<tr valign="top">
+				<td><input type="text" name="worldpay_instId" value="<?php esc_attr_e( get_option('em_'. $this->gateway . "_instId" )); ?>" />
+					<br />
+					<em><?php _e('Set this value to the Installation ID assigned to you by WorldPay', 'em-pro'); ?></em>
+				</td>
+			</tr>
+			<tr valign="top">
 				<th scope="row"><?php _e('WolrdPay Mode', 'em-pro') ?></th>
 				<td>
 					<select name="worldpay_mode">
@@ -293,19 +303,29 @@ Events Manager
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row"><?php _e('MD5 secret for transactions', 'em-pro') ?></th>
+				<td>
+					<input type="text" name="worldpay_md5_key" value="<?php esc_attr_e( get_option('em_'. $this->gateway . "_md5_key" )); ?>" />
+					<br />
+					<em><?php _e('Recommended, but optional, secret key for MD5 Encryption. This can be anything you want, but if set, must also be configured under your WorldPay installation setup.', 'em-pro'); ?></em><br />
+					<em><?php _e('If using MD5 Encryption, specify the following SignatureField in your installation setup:', 'em-pro'); ?></em>
+					<code>instId:amount:currency:cartId</code>
+				</td>
+			</tr>
+			<tr valign="top">
 				<th scope="row"><?php _e('Return Success URL', 'em-pro') ?></th>
 				<td>
 					<input type="text" name="worldpay_return_success" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_return_success" )); ?>" style='width: 40em;' /><br />
 					<em><?php _e('Once a payment is completed, users will sent to the My Bookings page which confirms that the payment has been made. If you would to customize the thank you page, create a new page and add the link here. Leave blank to return to default booking page with the thank you message specified above.', 'em-pro'); ?></em>
-			  	</td>
+				</td>
 			</tr>
 			<tr valign="top">
 				<th scope="row"><?php _e('Return Fail URL', 'em-pro') ?></th>
 				<td>
 					<input type="text" name="worldpay_return_fail" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_return_fail" )); ?>" style='width: 40em;' /><br />
 					<em><?php _e('If a payment is unsucessful or if a user cancels, they will be redirected to the my bookings page. If you want a custom page instead, create a new page and add the link here.', 'em-pro'); ?></em>
-			  	</td>
-		  	</tr>
+					</td>
+				</tr>
 			<tr valign="top">
 				<th scope="row"><?php _e('Delete Bookings Pending Payment', 'em-pro') ?></th>
 				<td>
@@ -331,6 +351,7 @@ Events Manager
 		$gateway_options = array(
 			$this->gateway . "_mode" => $_REQUEST[ $this->gateway.'_mode'],
 			$this->gateway . "_instId" => $_REQUEST[ $this->gateway.'_instId' ],
+			$this->gateway . "_md5_key" => $_REQUEST[ $this->gateway.'_md5_key' ],
 			$this->gateway . "_manual_approval" => $_REQUEST[ $this->gateway.'_manual_approval' ],
 			$this->gateway . "_booking_feedback" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback' ]),
 			$this->gateway . "_booking_feedback_free" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_free' ]),
