@@ -148,6 +148,15 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 //error_log( print_r( $_POST, true  ) );
 //var_dump( $_POST );
 
+		// Security check if Payment Response Password is configured
+		if( get_option('em_'. $this->gateway . "_callback_pw" ) != '' ) {
+			if( get_option('em_'. $this->gateway . "_callback_pw" ) != $_POST['callbackPW'] ) {
+				status_header( 403 );
+				echo 'Permisson denied. callbackPW incorrect.';
+				return;
+			}
+		}
+
 		if( isset( $_POST['cartId'] ) && isset( $_POST['transTime'] ) && isset( $_POST['transStatus'] ) ) {
 
 			// Lookup booking
@@ -293,7 +302,7 @@ Events Manager
 				</td>
 			</tr>
 			<tr valign="top">
-				<th scope="row"><?php _e('WolrdPay Mode', 'em-pro') ?></th>
+				<th scope="row"><?php _e('WorldPay Mode', 'em-pro') ?></th>
 				<td>
 					<select name="worldpay_mode">
 						<option value="live" <?php if (get_option('em_'. $this->gateway . "_mode" ) == 'live') echo 'selected="selected"'; ?>><?php _e('Live', 'em-pro') ?></option>
@@ -310,6 +319,14 @@ Events Manager
 					<em><?php _e('Recommended, but optional, secret key for MD5 Encryption. This can be anything you want, but if set, must also be configured under your WorldPay installation setup.', 'em-pro'); ?></em><br />
 					<em><?php _e('If using MD5 Encryption, specify the following SignatureField in your installation setup:', 'em-pro'); ?></em>
 					<code>instId:amount:currency:cartId</code>
+				</td>
+			</tr>
+			<tr valign="top">
+				<th scope="row"><?php _e('Payment Response Password', 'em-pro') ?></th>
+				<td>
+					<input type="text" name="worldpay_callback_pw" value="<?php esc_attr_e( get_option('em_'. $this->gateway . "_callback_pw" )); ?>" />
+					<br />
+					<em><?php _e('To secure the Events Manager response handler, add a password here and in your WorldPay Installation Setup.', 'em-pro'); ?></em><br />
 				</td>
 			</tr>
 			<tr valign="top">
@@ -352,6 +369,7 @@ Events Manager
 			$this->gateway . "_mode" => $_REQUEST[ $this->gateway.'_mode'],
 			$this->gateway . "_instId" => $_REQUEST[ $this->gateway.'_instId' ],
 			$this->gateway . "_md5_key" => $_REQUEST[ $this->gateway.'_md5_key' ],
+			$this->gateway . "_callback_pw" => $_REQUEST[ $this->gateway.'_callback_pw' ],
 			$this->gateway . "_manual_approval" => $_REQUEST[ $this->gateway.'_manual_approval' ],
 			$this->gateway . "_booking_feedback" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback' ]),
 			$this->gateway . "_booking_feedback_free" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_free' ]),
