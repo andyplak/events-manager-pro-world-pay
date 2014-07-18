@@ -92,10 +92,13 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 	function get_worldpay_vars( $EM_Booking ) {
 		global $wp_rewrite, $EM_Notices;
 
+		$currency = get_option('dbem_bookings_currency', 'USD');
+		$currency = apply_filters('em_gateway_worldpay_get_currency', $currency, $EM_Booking );
+
 		$worldpay_vars = array(
 			'instId' => get_option('em_'. $this->gateway . "_instId" ),
 			'cartId' => $EM_Booking->booking_id,
-			'currency' => get_option('dbem_bookings_currency', 'USD'),
+			'currency' => $currency,
 			'amount' => number_format( $EM_Booking->get_price(), 2),
 			'desc' => __('Event Tickets for ', 'em-pro') . $EM_Booking->get_event()->event_name
 		);
@@ -109,7 +112,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			$signature = get_option('em_'. $this->gateway . "_md5_key" );
 			$signature.= ":".get_option('em_'. $this->gateway . "_instId" );
 			$signature.= ":".number_format( $EM_Booking->get_price(), 2);
-			$signature.= ":".get_option('dbem_bookings_currency', 'USD');
+			$signature.= ":".$currency;
 			$signature.= ":".$EM_Booking->booking_id;
 			$worldpay_vars['signature'] = md5( $signature );
 		}
