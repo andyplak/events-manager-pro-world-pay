@@ -107,6 +107,11 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			$worldpay_vars['testMode'] = 100;
 		}
 
+		if( get_option('em_'. $this->gateway . "_hide_currency" ) ) {
+			$worldpay_vars['hideCurrency'] = 1;
+		}
+
+
 		// Build MD5 signature if configured for use in Gateway settings
 		if( get_option('em_'. $this->gateway . "_md5_key" ) != '' ) {
 			$signature = get_option('em_'. $this->gateway . "_md5_key" );
@@ -333,6 +338,13 @@ Events Manager
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row"><?php _e('Hide currency choice', 'em-pro') ?></th>
+				<td>
+					<input type="checkbox" name="worldpay_hide_currency" value="1" <?php echo (get_option('em_'. $this->gateway . "_hide_currency" )) ? 'checked="checked"':''; ?> />
+					<em><?php _e("By default the WorldPay payment page offers a choice of currency. Check if you don't want to give users that choice.", 'em-pro'); ?></em><br />
+				</td>
+		 	</tr>
+			<tr valign="top">
 				<th scope="row"><?php _e('Return Success URL', 'em-pro') ?></th>
 				<td>
 					<input type="text" name="worldpay_return_success" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_return_success" )); ?>" style='width: 40em;' /><br />
@@ -378,6 +390,7 @@ Events Manager
 			$this->gateway . "_booking_feedback_free" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_free' ]),
 			$this->gateway . "_booking_feedback_thanks" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_thanks' ]),
 			$this->gateway . "_booking_timeout" => $_REQUEST[ $this->gateway.'_booking_timeout' ],
+			$this->gateway . "_hide_currency" => $_REQUEST[ $this->gateway.'_hide_currency' ],
 			$this->gateway . "_return_success" => $_REQUEST[ $this->gateway.'_return_success' ],
 			$this->gateway . "_return_fail" => $_REQUEST[ $this->gateway.'_return_fail' ],
 		);
