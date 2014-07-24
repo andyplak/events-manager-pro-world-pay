@@ -100,7 +100,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			'cartId' => $EM_Booking->booking_id,
 			'currency' => $currency,
 			'amount' => number_format( $EM_Booking->get_price(), 2),
-			'desc' => __('Event Tickets for ', 'em-pro') . $EM_Booking->get_event()->event_name
+			'desc' => $EM_Booking->get_event()->event_name
 		);
 
 		if( get_option('em_'. $this->gateway . "_mode" ) == 'test' ) {
