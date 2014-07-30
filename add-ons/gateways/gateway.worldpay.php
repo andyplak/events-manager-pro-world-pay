@@ -54,6 +54,46 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 	 * --------------------------------------------------
 	 */
 
+
+	/**
+	 * Intercepts return data after a booking has been made
+	 * Add payment method choices if setting is enabled via gateway settings
+	 * @param array $return
+	 * @param EM_Booking $EM_Booking
+	 * @return array
+	 */
+
+	/**
+	 * Outputs custom booking form content and credit card information.
+	 */
+	function booking_form(){
+
+		if( get_option('em_'. $this->gateway . "_payment_method_selection" ) ) {
+			?>
+			<p>
+				<label><?php  _e('Payment Method','em-pro'); ?></label>
+				<select name="paymentType">
+					<option value="">Payment method</option>
+					<option value="AMEX">American Express</option>
+					<option value="DINS">Diners</option>
+					<option value="ELV">ELV</option>
+					<option value="JCB">JCB</option>
+					<option value="MSCD">Mastercard</option>
+					<option value="DMC">Mastercard Debit</option>
+					<option value="LASR">Laser</option>
+					<option value="MAES">Maestro</option>
+					<option value="VISA">Visa</option>
+					<option value="VISD">Visa Debit</option>
+					<option value="VIED">Visa Electron</option>
+					<option value="VISP">Visa Purchasing</option>
+					<option value="VME">V.me</option>
+				</select>
+			</p>
+			<?php
+		}
+	}
+
+
 	/**
 	 * Intercepts return data after a booking has been made and adds WorldPay vars, modifies feedback message.
 	 * @param array $return
@@ -273,7 +313,7 @@ Events Manager
 		<tbody>
 			<tr valign="top">
 				<th scope="row"><?php _e('Success Message', 'em-pro') ?></th>
-			 	<td>
+				<td>
 					<input type="text" name="worldpay_booking_feedback" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_booking_feedback" )); ?>" style='width: 40em;' /><br />
 					<em><?php _e('The message that is shown to a user when a booking is successful whilst being redirected to WorldPay for payment.','em-pro'); ?></em>
 				</td>
@@ -284,13 +324,13 @@ Events Manager
 					<input type="text" name="worldpay_booking_feedback_free" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_booking_feedback_free" )); ?>" style='width: 40em;' /><br />
 					<em><?php _e('If some cases if you allow a free ticket (e.g. pay at gate) as well as paid tickets, this message will be shown and the user will not be redirected to WorldPay.','em-pro'); ?></em>
 				</td>
-		  	</tr>
+				</tr>
 			<tr valign="top">
 				<th scope="row"><?php _e('Thank You Message', 'em-pro') ?></th>
 				<td>
 					<input type="text" name="worldpay_booking_feedback_thanks" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_booking_feedback_thanks" )); ?>" style='width: 40em;' /><br />
 					<em><?php _e('If you choose to return users to the default Events Manager thank you page after a user has paid on WorldPay, you can customize the thank you message here.','em-pro'); ?></em>
-			  	</td>
+					</td>
 			</tr>
 		</tbody>
 	</table>
@@ -341,6 +381,15 @@ Events Manager
 				</td>
 			</tr>
 			<tr valign="top">
+				<th scope="row"><?php _e('Bypassing the Payment Selection Page', 'em-pro') ?></th>
+				<td>
+					<input type="checkbox" name="worldpay_payment_method_selection" value="1" <?php echo (get_option('em_'. $this->gateway . "_payment_method_selection" )) ? 'checked="checked"':''; ?> />
+					<em><?php _e("Enable this option to offer the user a choice of payment methods on your WordPress site.", 'em-pro'); ?></em><br />
+					<em><?php _e("This will allow users to bypass the Payment Selection Page on WorldPay.", 'em-pro'); ?></em><br />
+					<em><?php _e("Note: Hide Language Choice will need to be enabled for the bypass to work.", 'em-pro'); ?></em><br />
+				</td>
+			</tr>
+			<tr valign="top">
 				<th scope="row"><?php _e('Hide currency choice', 'em-pro') ?></th>
 				<td>
 					<input type="checkbox" name="worldpay_hide_currency" value="1" <?php echo (get_option('em_'. $this->gateway . "_hide_currency" )) ? 'checked="checked"':''; ?> />
@@ -382,7 +431,7 @@ Events Manager
 					<em><?php _e('By default, when someone pays for a booking, it gets automatically approved once the payment is confirmed. If you would like to manually verify and approve bookings, tick this box.','em-pro'); ?></em><br />
 					<em><?php echo sprintf(__('Approvals must also be required for all bookings in your <a href="%s">settings</a> for this to work properly.','em-pro'),EM_ADMIN_URL.'&amp;page=events-manager-options'); ?></em>
 				</td>
-		 	</tr>
+			</tr>
 		</tbody>
 	</table>
 		<?php
@@ -401,6 +450,7 @@ Events Manager
 			$this->gateway . "_booking_feedback_thanks" => wp_kses_data($_REQUEST[ $this->gateway.'_booking_feedback_thanks' ]),
 			$this->gateway . "_booking_timeout" => $_REQUEST[ $this->gateway.'_booking_timeout' ],
 			$this->gateway . "_hide_currency" => $_REQUEST[ $this->gateway.'_hide_currency' ],
+			$this->gateway . "_payment_method_selection" => $_REQUEST[ $this->gateway.'_payment_method_selection' ],
 			$this->gateway . "_hide_language" => $_REQUEST[ $this->gateway.'_hide_language' ],
 			$this->gateway . "_return_success" => $_REQUEST[ $this->gateway.'_return_success' ],
 			$this->gateway . "_return_fail" => $_REQUEST[ $this->gateway.'_return_fail' ],
