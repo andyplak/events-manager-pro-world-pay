@@ -17,6 +17,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 
 			add_action('em_gateway_js', array(&$this,'em_gateway_js'));
 			add_action('em_template_my_bookings_header',array(&$this,'say_thanks')); //say thanks on my_bookings page
+			add_filter('em_booking_validate', array(&$this, 'em_booking_validate'),10,2); // Hook into booking validation
 
 			//set up cron for booking timeouts
 			$timestamp = wp_next_scheduled('emp_worldpay_cron');
@@ -91,6 +92,19 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			</p>
 			<?php
 		}
+	}
+
+	/**
+	 * Hook into booking validation and check validate payment type if present
+	 * @param boolean $result
+	 * @param EM_Booking $EM_Booking
+	 */
+	function em_booking_validate($result, $EM_Booking) {
+		if( isset( $_POST['paymentType'] ) && empty( $_POST['paymentType'] ) ) {
+			$EM_Booking->add_error('Please specify payment method');
+			$result = false;
+		}
+		return $result;
 	}
 
 
