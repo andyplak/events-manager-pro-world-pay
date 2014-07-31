@@ -254,8 +254,11 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 					if( empty( $continue_link ) ) {
 						$continue_link = get_permalink(get_option("dbem_my_bookings_page")).'?thanks=1';
 					}
+					echo '<WPDISPLAY FILE=header.html>';
+					echo '<WPDISPLAY ITEM=banner>';
 					echo '<p>'.get_option('em_'.$this->gateway.'_booking_feedback_thanks').'</p>';
 					echo 'Return to <a href="'.$continue_link.'">'.get_bloginfo('name').'</a>';
+					echo '<WPDISPLAY FILE=footer.html>';
 					return;
 
 				}else {
@@ -271,8 +274,11 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 						if( empty( $continue_link ) ) {
 							$continue_link = get_permalink(get_option("dbem_my_bookings_page")).'?fail='.$strStatus;
 						}
+						echo '<WPDISPLAY FILE=header.html>';
+						echo '<WPDISPLAY ITEM=banner>';
 						echo '<p>Payment cancelled.</p>';
 						echo 'Return to <a href="'.$continue_link.'">'.get_bloginfo('name').'</a>';
+						echo '<WPDISPLAY FILE=footer.html>';
 						return;
 
 					}else{
