@@ -169,6 +169,10 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 			$worldpay_vars['noLanguageMenu'] = 1;
 		}
 
+		if( get_option('em_'. $this->gateway . "_payment_method_selection" ) ) {
+			$worldpay_vars['paymentType'] = $_REQUEST['paymentType'];
+		}
+
 		// Build MD5 signature if configured for use in Gateway settings
 		if( get_option('em_'. $this->gateway . "_md5_key" ) != '' ) {
 			$signature = get_option('em_'. $this->gateway . "_md5_key" );
