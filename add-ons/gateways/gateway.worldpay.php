@@ -70,6 +70,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 	function booking_form(){
 
 		if( get_option('em_'. $this->gateway . "_payment_method_selection" ) ) {
+			ob_start();
 			?>
 			<p>
 				<label><?php  _e('Payment Method','em-pro'); ?></label>
@@ -91,6 +92,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 				</select>
 			</p>
 			<?php
+			echo apply_filters('em_gateway_'.$this->gateway.'_booking_form', ob_get_clean() );
 		}
 	}
 
