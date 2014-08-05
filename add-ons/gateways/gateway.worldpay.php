@@ -149,11 +149,14 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 		$currency = get_option('dbem_bookings_currency', 'USD');
 		$currency = apply_filters('em_gateway_worldpay_get_currency', $currency, $EM_Booking );
 
+		$amount = $EM_Booking->get_price();
+		$amount = apply_filters('em_gateway_worldpay_get_amount', $amount, $EM_Booking, $_REQUEST );
+
 		$worldpay_vars = array(
 			'instId' => get_option('em_'. $this->gateway . "_instId" ),
 			'cartId' => $EM_Booking->booking_id,
 			'currency' => $currency,
-			'amount' => number_format( $EM_Booking->get_price(), 2),
+			'amount' => number_format( $amount, 2),
 			'desc' => $EM_Booking->get_event()->event_name
 		);
 
