@@ -180,7 +180,7 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 		if( get_option('em_'. $this->gateway . "_md5_key" ) != '' ) {
 			$signature = get_option('em_'. $this->gateway . "_md5_key" );
 			$signature.= ":".get_option('em_'. $this->gateway . "_instId" );
-			$signature.= ":".number_format( $EM_Booking->get_price(), 2);
+			$signature.= ":".number_format( $amount, 2);
 			$signature.= ":".$currency;
 			$signature.= ":".$EM_Booking->booking_id;
 			$worldpay_vars['signature'] = md5( $signature );
