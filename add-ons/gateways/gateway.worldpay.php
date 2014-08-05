@@ -257,7 +257,10 @@ class EM_Gateway_Worldpay extends EM_Gateway {
 					echo '<WPDISPLAY FILE=header.html>';
 					echo '<WPDISPLAY ITEM=banner>';
 					echo '<p>'.get_option('em_'.$this->gateway.'_booking_feedback_thanks').'</p>';
-					echo 'Return to <a href="'.$continue_link.'">'.get_bloginfo('name').'</a>';
+					echo '<p><strong>Item:</strong> '.$EM_Booking->get_event()->event_name.'<br />';
+					echo '<strong>Amount:</strong> '.$currency.$amount.'<br />';
+					echo '<strong>Booking Reference:</strong> '.$EM_Booking->booking_id.'<br /></p>';
+					echo '<p>Return to <a href="'.$continue_link.'">'.get_bloginfo('name').'</a>';
 					echo '<WPDISPLAY FILE=footer.html>';
 					return;
 
