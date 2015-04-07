@@ -344,7 +344,7 @@ Events Manager
 	<table class="form-table">
 		<tbody>
 			<tr valign="top">
-				<th scope="row"><?php _e('Success Message', 'em-pro') ?></th>
+				<th scope="row"><?php _e('Redirecting Message', 'em-pro') ?></th>
 				<td>
 					<input type="text" name="worldpay_booking_feedback" value="<?php esc_attr_e(get_option('em_'. $this->gateway . "_booking_feedback" )); ?>" style='width: 40em;' /><br />
 					<em><?php _e('The message that is shown to a user when a booking is successful whilst being redirected to WorldPay for payment.','em-pro'); ?></em>
