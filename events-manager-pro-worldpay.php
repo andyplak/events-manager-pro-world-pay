@@ -3,7 +3,7 @@
 Plugin Name: Events Manager Pro - WorldPay Gateway
 Plugin URI: http://wp-events-plugin.com
 Description: WorldPay Hosted Payment Page (HTML Redirect) gateway plugin for Events Manager Pro
-Version: 1.1
+Version: 1.2
 Depends: Events Manager Pro
 Author: Andy Place
 Author URI: http://www.andyplace.co.uk
